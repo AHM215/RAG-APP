@@ -1,4 +1,4 @@
-import BaseController as BaseController
+from .BaseController import BaseController
 from fastapi import UploadFile
 from helpers.config import get_settings
 from models import ResponseSignal
