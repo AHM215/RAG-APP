@@ -1,8 +1,9 @@
-from fastapi import FastAPI, APIRouter, Depends, UploadFile, status
+from fastapi import APIRouter, Depends, UploadFile, status
 from fastapi.responses import JSONResponse
 import os
 from helpers.config import get_settings, Settings
-from controllers import DataController, ProjectController
+from controllers import DataController, ProcessController
+from schemas.data import ProcessRequest
 import aiofiles
 from models import ResponseSignal
 import logging
@@ -58,3 +59,23 @@ async def upload_data(project_id: str, file: UploadFile,
                 "file_id": file_id
             }
         )
+
+
+@data_router.post("/process/{project_id}")
+async def process_endpoint(project_id: str, process_request: ProcessRequest):
+    
+    process_controller = ProcessController(project_id=project_id)
+
+    file_content = process_controller.get_file_content(file_id=process_request.file_id)
+
+    if isinstance(file_content, JSONResponse):
+        return file_content
+
+    file_chunks = process_controller.process_file_content(
+        file_content=file_content,
+        file_id=process_request.file_id,
+        chunk_size=process_request.chunk_size,
+        overlap_size=process_request.overlap_size
+    )
+
+    return file_chunks
