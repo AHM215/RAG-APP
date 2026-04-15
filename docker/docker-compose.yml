@@ -1,0 +1,24 @@
+name: rag-app
+services:
+  # FastAPI Application
+  fastapi:
+    container_name: fastapi
+    build:
+      context: ..
+      dockerfile: docker/minirag/Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - fastapi_data:/app/assets
+    networks:
+      - backend
+    restart: always
+    env_file:
+      - ../src/.env
+
+networks:
+  backend:
+    driver: bridge
+
+volumes:
+  fastapi_data:
