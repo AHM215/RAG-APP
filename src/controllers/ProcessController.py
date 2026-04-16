@@ -1,4 +1,4 @@
-from fastapi import status
+from fastapi import status, HTTPException
 from fastapi.responses import JSONResponse
 from .BaseController import BaseController
 from .ProjectController import ProjectController
@@ -23,6 +23,7 @@ class ProcessController(BaseController):
         ## check if file exists from ProcessingEnum is txt or pdf to return the custom loader
         file_path = os.path.join(self.project_path, file_id)
         file_ext = self.get_file_extension(file_id=file_id)
+        print(f"Processing file: {file_path} with extension: {file_ext}")
 
         if file_ext == ProcessingEnum.TXT.value:
             return TextLoader(file_path, encoding = "utf-8")
@@ -30,12 +31,10 @@ class ProcessController(BaseController):
             return PyMuPDFLoader(file_path)
         else:
             # use fastapi response to return error message with status code 400
-            return JSONResponse(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                content={
-                    "signal": f"Unsupported file type: {file_ext}"
-                }
-            )
+            raise HTTPException(
+                            status_code=status.HTTP_400_BAD_REQUEST,
+                            detail=f"Unsupported file type: {file_ext}"
+                        )
         
     def get_file_content(self, file_id: str):
         loader = self.get_file_loader(file_id=file_id)
