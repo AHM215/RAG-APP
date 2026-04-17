@@ -13,6 +13,8 @@ services:
     
     networks:
       - backend
+    env_file:
+      - ./.env
     
     restart: always
   # FastAPI Application
@@ -25,7 +27,6 @@ services:
       - "8000:8000"
     volumes:
       - fastapi_data:/app/files
-
     environment:
       - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
