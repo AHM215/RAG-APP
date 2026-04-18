@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-class LLMEnterface(ABC):
+class LLMInterface(ABC):
 
     @abstractmethod    
     def set_generation_model(self, model_name: str):
