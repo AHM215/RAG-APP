@@ -3,7 +3,7 @@ from ..enums import OpenAIEnums, SystemPromptEnum
 from openai import OpenAI
 import logging
 
-class OpenAIProvider(LLMInterface):
+class OpenAiProvider(LLMInterface):
 
     def __init__(self, api_url: str, api_key: str,
                 default_input_max_characters: int=1000,
