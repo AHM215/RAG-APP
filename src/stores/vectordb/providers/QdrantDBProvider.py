@@ -1,9 +1,9 @@
 from ..VectorDBInterface import VectorDBInterface
-from enums import VectorDBEnums, DistanceMethodEnums
+from ..enums.VectorDBEnums import VectorDBEnums, DistanceMethodEnums
 from qdrant_client import QdrantClient, models
 import logging
 
-class QuadrantDBProvider(VectorDBInterface):
+class QdrantDBProvider(VectorDBInterface):
     
     def __init__(self, db_path: str, distance_method: str):
         self.db_path = db_path
