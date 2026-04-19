@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI()
 
 @app.on_event("startup")
-async def startup_db_client():
+async def startup_span():
     settings = get_settings()
     # Initialize your database client here
     app.mongo_conn = AsyncIOMotorClient(settings.MONGODB_URL)
@@ -26,14 +26,16 @@ async def startup_db_client():
     app.embedding_client = llm_provider_factory.create(provider=settings.EMBEDDING_BACKEND)
     app.embedding_client.set_embedding_model(settings.EMBEDDING_MODEL_ID, settings.EMBEDDING_MODEL_SIZE)
 
-    vector_db_provider_factory = VectorDBProviderFactory(config=settings)
-    app.vector_db_client = vector_db_provider_factory.create(provider=settings.VECTOR_DB_BACKEND)
+    vectordb_provider_factory = VectorDBProviderFactory(config=settings)
+    app.vectordb_client = vectordb_provider_factory.create(provider=settings.VECTOR_DB_BACKEND)
+    app.vectordb_client.connect()
 
 
 
 @app.on_event("shutdown")
-async def shutdown_db_client():
+async def shutdown_span():
     app.mongo_conn.close()
+    app.vectordb_client.disconnect()
     logger.info("MongoDB connection closed.")
 
 
