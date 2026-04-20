@@ -1,6 +1,6 @@
 from .BaseController import BaseController
 from models.db_schemes import Project, DataChunk
-from stores.llm.enums import DocumentTypeEnum
+from stores.llm.enums import DocumentTypeEnum, OpenAIEnums, CoHereEnums
 from typing import List
 import json
 
@@ -88,6 +88,48 @@ class NLPController(BaseController):
 
         return results
     
+    def _convert_messages_for_provider(self, messages: List) -> List[dict]:
+        """Convert LangChain messages to provider-specific format using dynamic enum mapping.
+        
+        Args:
+            messages: List of LangChain message objects
+            
+        Returns:
+            List of dict messages in provider-specific format
+        """
+        provider_messages = []
+        provider_enums = self.generation_client.enums
+        
+        # Map LangChain message types to provider roles
+        role_mapping = {
+            'system': provider_enums.SYSTEM.value,
+            'human': provider_enums.USER.value,
+            'user': provider_enums.USER.value,
+            'assistant': provider_enums.ASSISTANT.value,
+        }
+        
+        for message in messages:
+            msg_dict = message.dict() if hasattr(message, 'dict') else message
+            langchain_role = msg_dict.get('type', msg_dict.get('role', 'user'))
+            content = msg_dict.get('content', '')
+            
+            # Map to provider-specific role
+            provider_role = role_mapping.get(langchain_role.lower(), provider_enums.USER.value)
+            
+            # Use provider-specific format
+            if provider_enums == CoHereEnums:
+                provider_messages.append({
+                    "role": provider_role,
+                    "text": content
+                })
+            else:
+                provider_messages.append({
+                    "role": provider_role,
+                    "content": content
+                })
+        
+        return provider_messages
+
     def answer_rag_question(self, project: Project, query: str, limit: int = 10):
         
         answer, full_prompt, chat_history = None, None, None
@@ -102,33 +144,25 @@ class NLPController(BaseController):
         if not retrieved_documents or len(retrieved_documents) == 0:
             return answer, full_prompt, chat_history
         
-        # step2: Construct LLM prompt
-        system_prompt = self.template_parser.get("rag", "system_prompt")
+        # step2: Format documents as context
+        context = self.template_parser.format_documents(retrieved_documents)
 
-        documents_prompts = "\n".join([
-            self.template_parser.get("rag", "document_prompt", {
-                    "doc_num": idx + 1,
-                    "chunk_text": doc.text,
-            })
-            for idx, doc in enumerate(retrieved_documents)
-        ])
+        # step3: Get LangChain ChatPromptTemplate
+        prompt_template = self.template_parser.get_chat_prompt("rag", "rag_prompt")
 
-        footer_prompt = self.template_parser.get("rag", "footer_prompt")
+        # step4: Format the template with context and question
+        messages = prompt_template.format_messages(context=context, question=query)
 
-        # step3: Construct Generation Client Prompts
-        chat_history = [
-            self.generation_client.construct_prompt(
-                prompt=system_prompt,
-                role=self.generation_client.enums.SYSTEM.value,
-            )
-        ]
+        # step5: Convert to provider format
+        chat_history = self._convert_messages_for_provider(messages)
 
-        full_prompt = "\n\n".join([ documents_prompts,  footer_prompt])
-
-        # step4: Retrieve the Answer
+        # step6: Generate answer (empty prompt since messages are in chat_history)
         answer = self.generation_client.generate_text(
-            prompt=full_prompt,
+            prompt="",
             chat_history=chat_history
         )
+
+        # For backward compatibility, store the formatted context as full_prompt
+        full_prompt = context
 
         return answer, full_prompt, chat_history
