@@ -1,30 +1,34 @@
-from string import Template
+from langchain_core.prompts import ChatPromptTemplate
 
 #### RAG PROMPTS ####
 
-#### System ####
+#### System Message ####
+system_message = "\n".join([
+    "أنت مساعد يجيب على الأسئلة بناءً فقط على المستندات المقدمة.",
+    "",
+    "تعليمات مهمة:",
+    "- أجب فقط باستخدام المعلومات الموجودة في المستندات أدناه",
+    "- إذا لم تحتوي المستندات على الإجابة، قل \"لا أستطيع العثور على هذه المعلومات في المستندات المقدمة\"",
+    "- لا تقم بتأليف أو استنتاج معلومات غير موجودة صراحة في المستندات",
+    "- أجب بنفس لغة سؤال المستخدم",
+    "- كن موجزاً ودقيقاً"
+])
 
-system_prompt = Template("\n".join([
-    "أنت مساعد لتوليد رد للمستخدم.",
-    "ستحصل على مجموعة من المستندات المرتبطة باستفسار المستخدم.",
-    "عليك توليد رد بناءً على المستندات المقدمة.",
-    "تجاهل المستندات التي لا تتعلق باستفسار المستخدم.",
-    "يمكنك الاعتذار للمستخدم إذا لم تتمكن من توليد رد.",
-    "عليك توليد الرد بنفس لغة استفسار المستخدم.",
-    "كن مؤدباً ومحترماً في التعامل مع المستخدم.",
-    "كن دقيقًا ومختصرًا في ردك. تجنب المعلومات غير الضرورية.",
-]))
+#### Document Formatting Function ####
+def format_document(doc_num: int, chunk_text: str) -> str:
+    """Format a single document for context injection (Arabic).
+    
+    Args:
+        doc_num: Document index (1-based)
+        chunk_text: Document content
+        
+    Returns:
+        Formatted document string in Arabic
+    """
+    return f"## المستند رقم: {doc_num}\n### المحتوى: {chunk_text}"
 
-#### Document ####
-document_prompt = Template(
-    "\n".join([
-        "## المستند رقم: $doc_num",
-        "### المحتوى: $chunk_text",
-    ])
-)
-
-#### Footer ####
-footer_prompt = Template("\n".join([
-    "بناءً فقط على المستندات المذكورة أعلاه، يرجى توليد إجابة للمستخدم.",
-    "## الإجابة:",
-]))
+#### RAG Prompt Template ####
+rag_prompt = ChatPromptTemplate.from_messages([
+    ("system", system_message),
+    ("human", "{context}\n\nبناءً فقط على المستندات المذكورة أعلاه، يرجى الإجابة على السؤال التالي:\n\n{question}")
+])
