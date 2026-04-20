@@ -1,5 +1,25 @@
 name: rag-app
 services:
+  fastapi:
+    container_name: fastapi
+    build:
+      context: ..
+      dockerfile: docker/minirag/Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - fastapi_data:/app/files
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+    networks:
+      - backend
+    restart: always
+    depends_on:
+      - qdrant
+      - mongodb
+    env_file:
+      - ../src/.env
   mongodb:
     image: mongo:7-jammy
     
@@ -18,23 +38,17 @@ services:
     
     restart: always
   # FastAPI Application
-  fastapi:
-    container_name: fastapi
-    build:
-      context: ..
-      dockerfile: docker/minirag/Dockerfile
+  qdrant:
+    image: qdrant/qdrant:v1.13.6
+    container_name: qdrant
     ports:
-      - "8000:8000"
+      - "6333:6333"
     volumes:
-      - fastapi_data:/app/files
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
-      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+      - qdrant_data:/qdrant/storage
     networks:
       - backend
     restart: always
-    env_file:
-      - ../src/.env
+
 
 networks:
   backend:
@@ -43,3 +57,4 @@ networks:
 volumes:
   fastapi_data:
   mongo_data:
+  qdrant_data:
