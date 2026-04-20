@@ -20,3 +20,7 @@ class DataChunk(BaseModel):
 
     class Config:
         arbitrary_types_allowed = True
+
+class RetrievedDocument(BaseModel):
+    text: str
+    score: float
