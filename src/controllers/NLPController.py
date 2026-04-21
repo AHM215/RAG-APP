@@ -1,5 +1,5 @@
 from .BaseController import BaseController
-from models.db_schemes import Project, DataChunk
+from models.minirag.schemes import Project, DataChunk
 from stores.llm.enums import DocumentTypeEnum, OpenAIEnums, CoHereEnums
 from typing import List
 import json
