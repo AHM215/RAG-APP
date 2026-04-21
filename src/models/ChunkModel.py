@@ -1,5 +1,5 @@
 from .BaseDataModel import BaseDataModel
-from .db_schemes import DataChunk
+from .minirag.schemes import DataChunk
 from .enums.DataBaseEnum import DatabaseEnum
 from bson import ObjectId
 from pymongo import InsertOne

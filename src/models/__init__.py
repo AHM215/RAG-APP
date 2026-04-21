@@ -4,6 +4,6 @@ from .enums.AssetTypeEnum import AssetTypeEnum
 from .ProjectModel import ProjectModel
 from .ChunkModel import ChunkModel
 from .AssetModel import AssetModel
-from .db_schemes.data_chunk import DataChunk
-from .db_schemes.project import Project
-from .db_schemes.asset import Asset
+from .minirag.schemes.data_chunk import DataChunk
+from .minirag.schemes.project import Project
+from .minirag.schemes.asset import Asset

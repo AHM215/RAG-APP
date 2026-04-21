@@ -1,5 +1,5 @@
 from .BaseDataModel import BaseDataModel
-from .db_schemes import Asset
+from .minirag.schemes import Asset
 from .enums.DataBaseEnum import DatabaseEnum
 from bson import ObjectId
 

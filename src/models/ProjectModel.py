@@ -1,5 +1,5 @@
 from .BaseDataModel import BaseDataModel
-from .db_schemes import Project
+from .minirag.schemes import Project
 from .enums.DataBaseEnum import DatabaseEnum
 
 class ProjectModel(BaseDataModel):
