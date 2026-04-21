@@ -1,0 +1,59 @@
+# from pydantic import BaseModel, Field, validator
+# from typing import Optional
+# from bson.objectid import ObjectId
+
+# class DataChunk(BaseModel):
+#     id: Optional[ObjectId] = Field(None, alias="_id")
+#     chunk_text: str = Field(..., min_length=1)
+#     chunk_metadata: dict
+#     chunk_order: int = Field(..., gt=0)
+#     chunk_project_id: ObjectId
+#     chunk_asset_id: Optional[ObjectId]
+
+#     @classmethod
+#     def get_indexes(cls):
+#         return [{
+#             "key": [("chunk_project_id", 1)],
+#             "name": "chunk_project_id_index_1",
+#             "unique": False
+#         }]
+
+#     class Config:
+#         arbitrary_types_allowed = True
+
+from .minirag_base import SQLAlchemyBase
+from pydantic import BaseModel
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Index
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
+from sqlalchemy.dialects.postgresql import UUID, JSONB
+import uuid
+
+class DataChunk(SQLAlchemyBase):
+    __tablename__ = "data_chunks"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    chund_uuid = Column(UUID(as_uuid=True), default=uuid.uuid4, nullable=False, unique=True)
+    chunk_text = Column(String, nullable=False)
+    chunk_metadata = Column(JSONB, nullable=False)
+    chunk_order = Column(Integer, nullable=False)
+    chunk_project_id = Column(Integer, ForeignKey("projects.project_id"), nullable=False)
+    chunk_asset_id = Column(Integer, ForeignKey("assets.asset_id"), nullable=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), nullable=True)
+
+    project = relationship("Project", back_populates="chunks")
+    asset = relationship("Asset", back_populates="chunks")
+
+    __table_args__ = (
+        Index('ix_chunk_project_id',chunk_project_id),
+        Index('ix_chunk_asset_id',chunk_asset_id)
+    )
+
+
+class RetrievedDocument(BaseModel):
+    text: str
+    score: float
+
+

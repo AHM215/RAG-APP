@@ -7,7 +7,7 @@ from models.enums.AssetTypeEnum import AssetTypeEnum
 from models import DataChunk, Asset
 from helpers.config import get_settings, Settings
 from controllers import DataController, ProcessController
-from schemas.data import ProcessRequest
+from routes.schemes.data import ProcessRequest
 import aiofiles
 from models import ResponseSignal
 import logging
