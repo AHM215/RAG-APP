@@ -14,7 +14,7 @@ services:
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
     networks:
       - backend
-    restart: always
+    restart: no
     depends_on:
       - qdrant
       - mongodb
@@ -36,7 +36,7 @@ services:
     env_file:
       - ./.env
     
-    restart: always
+    restart: no
   # FastAPI Application
   qdrant:
     image: qdrant/qdrant:v1.13.6
@@ -47,7 +47,7 @@ services:
       - qdrant_data:/qdrant/storage
     networks:
       - backend
-    restart: always
+    restart: no
 
 
 networks:
