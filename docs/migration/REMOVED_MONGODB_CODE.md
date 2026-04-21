@@ -9,6 +9,23 @@ This document preserves the MongoDB implementation that was removed during the P
 
 ---
 
+## 🔖 MongoDB Release Available
+
+**Want to use MongoDB?** A stable, production-ready MongoDB version is available:
+
+**Release Tag**: `ragapp-mongo-v1`  
+**Commit**: `14e119e`
+
+```bash
+git checkout ragapp-mongo-v1
+```
+
+See [Rollback Procedure](#rollback-procedure-if-needed) for details.
+
+---
+
+---
+
 ## Table of Contents
 
 1. [MongoDB Model Classes](#mongodb-model-classes)
@@ -469,8 +486,26 @@ This code cleanup did **not** include data migration. If you need to migrate exi
 
 ## Historical Context
 
+### MongoDB Release
+
+**Official MongoDB Release**: `ragapp-mongo-v1`  
+**Commit**: `14e119e`  
+**Date**: 2026-04-21  
+**Status**: Stable, production-ready
+
+This release tag represents the last fully functional MongoDB implementation. Use this tag if you need to:
+- Access the complete MongoDB codebase
+- Run the application with MongoDB backend
+- Reference the working MongoDB implementation
+
+To checkout the MongoDB version:
+```bash
+git checkout ragapp-mongo-v1
+```
+
 **Timeline**:
 - MongoDB implementation: Original architecture
+- MongoDB stable release: `ragapp-mongo-v1` (commit `14e119e`, 2026-04-21)
 - PostgreSQL implementation: Commit `5990885` (2026-04-21)
 - MongoDB code cleanup: Commit `1d9cd23` (2026-04-21)
 
@@ -485,9 +520,37 @@ This code cleanup did **not** include data migration. If you need to migrate exi
 
 ## Rollback Procedure (If Needed)
 
-If you need to restore MongoDB functionality:
+### Option 1: Use the Official MongoDB Release (Recommended)
 
-1. Revert commit: `git revert 1d9cd23`
+The easiest way to use the MongoDB version:
+
+```bash
+# Checkout the MongoDB release tag
+git checkout ragapp-mongo-v1
+
+# Install MongoDB dependencies
+cd src
+pip install -r requirements.txt
+
+# Configure MongoDB connection in .env
+# MONGODB_URL=mongodb://localhost:27017
+# MONGODB_DATABASE=minirag
+
+# Run the application
+uvicorn main:app --reload
+```
+
+**Advantages**:
+- ✅ Complete, tested MongoDB implementation
+- ✅ No manual code restoration needed
+- ✅ All dependencies correctly specified
+- ✅ Docker Compose configuration included
+
+### Option 2: Manual Restoration (Not Recommended)
+
+If you need MongoDB on the current branch:
+
+1. Revert cleanup commit: `git revert 1d9cd23`
 2. Restore dependencies: Reinstall motor, pymongo, pydantic-mongo
 3. Update main.py to use MongoDB connection
 4. Restore model implementations from this document
