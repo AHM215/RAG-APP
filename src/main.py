@@ -4,7 +4,6 @@ from stores import LLMProviderFactory, VectorDBProviderFactory
 from stores import TemplateParser
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
-# from motor.motor_asyncio import AsyncIOMotorClient
 from helpers.config import get_settings
 import logging
 
@@ -17,10 +16,6 @@ app = FastAPI()
 async def startup_span():
     settings = get_settings()
     
-    # Initialize your database client here
-    # app.mongo_conn = AsyncIOMotorClient(settings.MONGODB_URL)
-    # app.db_client = app.mongo_conn[settings.MONGODB_DATABASE]
-
     postgres_conn = f"postgresql+asyncpg://{settings.POSTGRES_USERNAME}:{settings.POSTGRES_PASSWORD}@{settings.POSTGRES_HOST}:{settings.POSTGRES_PORT}/{settings.POSTGRES_MAIN_DATABASE}"
     app.db_engine = create_async_engine(postgres_conn)
     logger.info(app.db_engine)
@@ -45,9 +40,8 @@ async def startup_span():
 
 @app.on_event("shutdown")
 async def shutdown_span():
-    # app.mongo_conn.close()
     app.vectordb_client.disconnect()
-    logger.info("MongoDB connection closed.")
+    logger.info("Application shutdown complete.")
 
 
 
