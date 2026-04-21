@@ -1,42 +1,25 @@
 name: rag-app
 services:
-  fastapi:
-    container_name: fastapi
-    build:
-      context: ..
-      dockerfile: docker/minirag/Dockerfile
-    ports:
-      - "8000:8000"
-    volumes:
-      - fastapi_data:/app/files
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
-      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
-    networks:
-      - backend
-    restart: no
-    depends_on:
-      - qdrant
-      - mongodb
-    env_file:
-      - ../src/.env
-  mongodb:
-    image: mongo:7-jammy
-    
-    container_name: mongodb
-    
-    ports:
-      - "27007:27017"
-    
-    volumes:
-      - mongo_data:/data/db
-    
-    networks:
-      - backend
-    env_file:
-      - ./.env
-    
-    restart: no
+  # fastapi:
+  #   container_name: fastapi
+  #   build:
+  #     context: ..
+  #     dockerfile: docker/minirag/Dockerfile
+  #   ports:
+  #     - "8000:8000"
+  #   volumes:
+  #     - fastapi_data:/app/files
+  #   environment:
+  #     - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+  #     - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+  #   networks:
+  #     - backend
+  #   restart: no
+  #   depends_on:
+  #     - qdrant
+  #     - pgvector
+  #   env_file:
+  #     - .env
   # FastAPI Application
   qdrant:
     image: qdrant/qdrant:v1.13.6
@@ -48,6 +31,59 @@ services:
     networks:
       - backend
     restart: no
+    
+  pgvector:
+    image: pgvector/pgvector:0.8.0-pg17
+    container_name: pgvector
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgvector_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    networks:
+      - backend
+    restart: no
+    env_file:
+      - .env
+
+
+  pgadmin:
+      container_name: pgadmin4_container
+      image: dpage/pgadmin4
+      # restart: always
+      restart: no
+      environment:
+        PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+        PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+      ports:
+        - "8080:80"
+      depends_on:
+        - pgvector
+      networks:
+      - backend
+      env_file:
+      - .env
+
+
+
+  # mongodb:
+  #   image: mongo:7-jammy
+    
+  #   container_name: mongodb
+    
+  #   ports:
+  #     - "27007:27017"
+    
+  #   volumes:
+  #     - mongo_data:/data/db
+    
+  #   networks:
+  #     - backend
+  #   env_file:
+  #     - ./.env
+    
+  #   restart: no
 
 
 networks:
@@ -56,5 +92,6 @@ networks:
 
 volumes:
   fastapi_data:
-  mongo_data:
   qdrant_data:
+  pgvector_data:
+  # mongo_data:
