@@ -57,7 +57,8 @@ class ProcessController(BaseController):
         
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, 
                                                        chunk_overlap=overlap_size,
-                                                       length_function=len)
+                                                       length_function=len,
+                                                       separators=["\n\n", "\n", ".", " ", ""])
         
         file_content_texts = [doc.page_content for doc in file_content]
 

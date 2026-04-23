@@ -3,6 +3,7 @@ from .minirag import DataChunk
 from .enums.DataBaseEnum import DatabaseEnum
 from sqlalchemy.future import select
 from sqlalchemy import func, delete
+from bson.objectid import ObjectId 
 
 class ChunkModel(BaseDataModel):
 
@@ -27,7 +28,7 @@ class ChunkModel(BaseDataModel):
     async def get_chunk(self, chunk_id: str):
 
         async with self.db_client() as session:
-            result = await session.execute(select(DataChunk).where(DataChunk.chunk_id == chunk_id))
+            result = await session.execute(select(DataChunk).where(DataChunk.id == chunk_id))
             chunk = result.scalar_one_or_none()
         return chunk
 
@@ -48,9 +49,18 @@ class ChunkModel(BaseDataModel):
             await session.commit()
         return result.rowcount
     
-    async def get_project_chunks(self, project_id: int, page_no: int=1, page_size: int=50):
+    async def get_project_chunks(self, project_id: int, page_no: int=1, page_size: int=150):
         async with self.db_client() as session:
             stmt = select(DataChunk).where(DataChunk.chunk_project_id == project_id).offset((page_no - 1) * page_size).limit(page_size)
             result = await session.execute(stmt)
             records = result.scalars().all()
         return records
+
+    async def get_total_chunks_count(self, project_id: ObjectId):
+        total_count = 0
+        async with self.db_client() as session:
+            count_sql = select(func.count(DataChunk.id)).where(DataChunk.chunk_project_id == project_id)
+            records_count = await session.execute(count_sql)
+            total_count = records_count.scalar()
+        
+        return total_count
