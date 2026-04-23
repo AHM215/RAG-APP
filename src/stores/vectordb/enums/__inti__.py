@@ -1,1 +1,1 @@
-from .VectorDBEnums import VectorDBEnums, DistanceMethodEnums
+from .VectorDBEnums import VectorDBEnums, DistanceMethodEnums, PgVectorIndexTypeEnums, PgVectorDistanceMethodEnums, PgVectorTableSchemeEnums
