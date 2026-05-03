@@ -3,6 +3,7 @@ from ..enums import OpenAIEnums
 from openai import OpenAI
 import logging
 from typing import List, Union
+import asyncio
 
 
 class OpenAIProvider(LLMInterface):
@@ -42,7 +43,7 @@ class OpenAIProvider(LLMInterface):
     def process_text(self, text: str):
         return text[:self.default_input_max_characters].strip()
 
-    def generate_text(self, prompt: str, chat_history: list=[], max_output_tokens: int=None,
+    async def generate_text(self, prompt: str, chat_history: list=[], max_output_tokens: int=None,
                             temperature: float = None):
         
         if not self.client:
@@ -60,12 +61,12 @@ class OpenAIProvider(LLMInterface):
             self.construct_prompt(prompt=prompt, role=OpenAIEnums.USER.value)
         )
 
-        response = self.client.chat.completions.create(
+        response = await asyncio.to_thread(self.client.chat.completions.create(
             model = self.generation_model_id,
             messages = chat_history,
             max_tokens = max_output_tokens,
             temperature = temperature
-        )
+        ))
 
         if not response or not response.choices or len(response.choices) == 0 or not response.choices[0].message:
             self.logger.error("Error while generating text with OpenAI")
