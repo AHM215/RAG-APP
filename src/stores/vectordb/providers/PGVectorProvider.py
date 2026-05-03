@@ -215,7 +215,9 @@ class PGVectorProvider(VectorDBInterface):
                 return [
                     RetrievedDocument(
                         text=record.text,
-                        score=record.score
+                        score=record.score,
+                        chunk_id=record.chunk_id,
+                        metadata=record.metadata if record.metadata else None,
                     )
                     for record in records
                 ]
