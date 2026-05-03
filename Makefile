@@ -22,20 +22,24 @@ install: ## Install all dependencies
 # =============================================================================
 
 POETRY_ENV_PATH := $(shell cd src && poetry env info --path)
+COMPOSE := docker compose -f docker/docker-compose.yml
 
 dev: ## Run src in development mode
 	cd src && poetry run uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
+POSTGRES_PASSWORD := $(shell grep POSTGRES_PASSWORD docker/env/.env.postgres | cut -d= -f2 | tr -d '"')
+
 db-create: ## Create the minirag database if it doesn't exist
 	@echo "Creating database if not exists..."
-	docker compose -f docker/docker-compose.yml exec pgvector psql -U postgres -tc \
+	$(COMPOSE) exec -e PGPASSWORD=$(POSTGRES_PASSWORD) pgvector psql -U postgres -tc \
 		"SELECT 1 FROM pg_database WHERE datname = 'minirag'" | grep -q 1 || \
-		docker compose -f docker/docker-compose.yml exec pgvector psql -U postgres -c "CREATE DATABASE minirag;"
+		$(COMPOSE) exec -e PGPASSWORD=$(POSTGRES_PASSWORD) pgvector psql -U postgres -c "CREATE DATABASE minirag;"
 
-up-dev: ## Start all development services and servers
+up-dev: ## Start infrastructure services and run app locally #  rabbitmq redis
 	@echo "Starting infrastructure services..."
-	cd docker && docker compose up -d pgvector pgadmin
-	@sleep 3
+	$(COMPOSE) up -d pgvector pgadmin 
+	@echo "Waiting for services to be ready..."
+	@sleep 5
 	$(MAKE) db-create
 	(. $(POETRY_ENV_PATH)/bin/activate && \
 	cd src && \
@@ -49,7 +53,7 @@ down-dev: ## Stop all development services
 	@echo "Stopping development services..."
 	@fuser -k 8000/tcp 2>/dev/null || true
 	@echo "Stopping infrastructure services..."
-	@cd docker && docker compose down
+	$(COMPOSE) down
 	@echo "All services stopped successfully"
 
 # =============================================================================
@@ -57,16 +61,34 @@ down-dev: ## Stop all development services
 # =============================================================================
 
 build: ## Build all services
-	cd docker && docker compose build
+	$(COMPOSE) build
 
 up: ## Start all services
-	cd docker && docker compose up -d
+	$(COMPOSE) up -d
+
+up-infra: ## Start infrastructure services only (pgvector, redis, rabbitmq, qdrant)
+	$(COMPOSE) up -d pgvector pgadmin rabbitmq redis qdrant
+
+up-monitoring: ## Start monitoring stack (prometheus, grafana, exporters)
+	$(COMPOSE) up -d prometheus grafana node-exporter postgres-exporter
+
+up-workers: ## Start celery workers and flower
+	$(COMPOSE) up -d celery-worker celery-beat flower
 
 down: ## Stop all services
-	cd docker && docker compose down
+	$(COMPOSE) down
+
+down-volumes: ## Stop all services and remove volumes
+	$(COMPOSE) down -v
 
 logs: ## Show logs from all services
-	cd docker && docker compose logs -f
+	$(COMPOSE) logs -f
+
+logs-app: ## Show logs from app services only
+	$(COMPOSE) logs -f fastapi celery-worker celery-beat flower
+
+logs-infra: ## Show logs from infrastructure services only
+	$(COMPOSE) logs -f pgvector rabbitmq redis qdrant
 
 # =============================================================================
 # DATABASE COMMANDS
@@ -74,13 +96,13 @@ logs: ## Show logs from all services
 
 # Database migrations (Docker)
 db-migrate: ## Run database migrations
-	docker compose -f docker/docker-compose.yml exec fastapi poetry run alembic upgrade head
+	$(COMPOSE) exec fastapi poetry run alembic upgrade head
 
 db-migrate-undo: ## Undo the last migration
-	docker compose -f docker/docker-compose.yml exec fastapi poetry run alembic downgrade -1
+	$(COMPOSE) exec fastapi poetry run alembic downgrade -1
 
 db-migration: ## Create new migration (usage: make db-migration NAME="description")
-	docker compose -f docker/docker-compose.yml exec fastapi poetry run alembic revision --autogenerate -m "$(NAME)"
+	$(COMPOSE) exec fastapi poetry run alembic revision --autogenerate -m "$(NAME)"
 
 # Database migrations (Development)
 db-migrate-dev: ## Run migrations in development mode
@@ -96,8 +118,8 @@ db-create-migration: ## Create a new migration in dev mode (usage: make db-creat
 # Database utilities
 db-reset: ## Drop and recreate the database
 	@echo "Resetting database..."
-	docker compose -f docker/docker-compose.yml exec pgvector psql -U postgres -c "DROP DATABASE IF EXISTS minirag;"
-	docker compose -f docker/docker-compose.yml exec pgvector psql -U postgres -c "CREATE DATABASE minirag;"
+	$(COMPOSE) exec pgvector psql -U postgres -c "DROP DATABASE IF EXISTS minirag;"
+	$(COMPOSE) exec pgvector psql -U postgres -c "CREATE DATABASE minirag;"
 
 db-recreate: db-reset db-migrate-dev ## Full reset: drop, create, and migrate
 
@@ -108,6 +130,19 @@ db-merge-heads: ## Merge alembic heads
 	(. $(POETRY_ENV_PATH)/bin/activate && \
 	cd src/models/minirag && \
 	poetry run alembic merge heads)
+
+# =============================================================================
+# CELERY COMMANDS
+# =============================================================================
+
+celery-worker: ## Start celery worker locally
+	cd src && poetry run celery -A celery_app worker --queues=default,file_processing,data_indexing --loglevel=info
+
+celery-beat: ## Start celery beat locally
+	cd src && poetry run celery -A celery_app beat --loglevel=info
+
+celery-flower: ## Start flower dashboard locally
+	cd src && poetry run celery -A celery_app flower --conf=flowerconfig.py
 
 # =============================================================================
 # CODE QUALITY & TESTING
