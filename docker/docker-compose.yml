@@ -33,7 +33,7 @@ services:
     restart: no
     
   pgvector:
-    image: pgvector/pgvector:0.8.0-pg17
+    image: ankane/pgvector:latest
     container_name: pgvector
     ports:
       - "5432:5432"
