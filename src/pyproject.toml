@@ -1,0 +1,45 @@
+[tool.poetry]
+name = "mini-rag"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = ">=3.12,<4.0"
+fastapi = "0.110.2"
+uvicorn = {extras = ["standard"], version = "0.29.0"}
+python-multipart = "0.0.9"
+python-dotenv = "1.0.1"
+pydantic-settings = "2.2.1"
+aiofiles = "23.2.1"
+langchain = "0.1.20"
+pymupdf = "1.24.3"
+motor = "3.4.0"
+pydantic-mongo = "2.3.0"
+openai = "1.75.0"
+cohere = "5.5.8"
+qdrant-client = "1.10.1"
+sqlalchemy = "2.0.36"
+asyncpg = "0.30.0"
+alembic = "1.14.0"
+psycopg2-binary = "2.9.10"
+pgvector = "0.4.0"
+prometheus-client = "0.21.1"
+starlette-exporter = "0.23.0"
+fastapi-health = "0.4.0"
+celery = "5.5.3"
+redis = "6.2.0"
+kombu = "5.5.4"
+billiard = "4.2.1"
+vine = "5.1.0"
+flower = "2.0.1"
+greenlet = "*"
+
+[tool.poetry.group.test.dependencies]
+httpx = "0.27.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
