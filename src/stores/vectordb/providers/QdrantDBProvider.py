@@ -78,7 +78,8 @@ class QdrantDBProvider(VectorDBInterface):
                         id=[record_id],
                         vector=vector,
                         payload={
-                            "text": text, "metadata": metadata
+                            "text": text, "metadata": metadata,
+                            "chunk_id": record_id
                         }
                     )
                 ]
@@ -112,7 +113,8 @@ class QdrantDBProvider(VectorDBInterface):
                     id=batch_record_ids[x],
                     vector=batch_vectors[x],
                     payload={
-                        "text": batch_texts[x], "metadata": batch_metadata[x]
+                        "text": batch_texts[x], "metadata": batch_metadata[x],
+                        "chunk_id": batch_record_ids[x]
                     }
                 )
 
@@ -145,6 +147,8 @@ class QdrantDBProvider(VectorDBInterface):
             RetrievedDocument(**{
                 "score": result.score,
                 "text": result.payload["text"],
+                "chunk_id": result.payload.get("chunk_id"),
+                "metadata": result.payload.get("metadata")
             })
             for result in results
         ]

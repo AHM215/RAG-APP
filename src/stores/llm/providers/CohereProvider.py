@@ -38,7 +38,7 @@ class CoHereProvider(LLMInterface):
     def process_text(self, text: str):
         return text[:self.default_input_max_characters].strip()
 
-    def generate_text(self, prompt: str, chat_history: list=[], max_output_tokens: int=None,
+    async def generate_text(self, prompt: str, chat_history: list=[], max_output_tokens: int=None,
                             temperature: float = None):
 
         if not self.client:
@@ -52,14 +52,14 @@ class CoHereProvider(LLMInterface):
         max_output_tokens = max_output_tokens if max_output_tokens else self.default_generation_max_output_tokens
         temperature = temperature if temperature else self.default_generation_temperature
 
-        response = self.client.chat(
-            model = self.generation_model_id,
-            chat_history = chat_history,
-            message = self.process_text(prompt),
-            temperature = temperature,
-            max_tokens = max_output_tokens
-        )
-
+        response = await asyncio.to_thread(
+                                            self.client.chat,
+                                            model=self.generation_model_id,
+                                            chat_history=chat_history,
+                                            message=self.process_text(prompt),
+                                            temperature=temperature,
+                                            max_tokens=max_output_tokens
+                                        )
         if not response or not response.text:
             self.logger.error("Error while generating text with CoHere")
             return None

@@ -56,30 +56,33 @@ class PGVectorProvider(VectorDBInterface):
         return records
     
     async def get_collection_info(self, collection_name: str) -> dict:
-        async with self.db_client() as session:
-            async with session.begin():
-                table_info_sql = sql_text("""SELECT schemaname, tablename, tableowner, tablespace, hasindexes 
-                                    FROM pg_tables 
-                                    WHERE tablename = :collection_name""")
-                count_sql = sql_text(f'SELECT COUNT(*) FROM {collection_name}')
+        
+        if await self.is_collection_existed(collection_name):
+            async with self.db_client() as session:
+                async with session.begin():
+                    table_info_sql = sql_text("""SELECT schemaname, tablename, tableowner, tablespace, hasindexes 
+                                        FROM pg_tables 
+                                        WHERE tablename = :collection_name""")
+                    count_sql = sql_text(f'SELECT COUNT(*) FROM {collection_name}')
 
-                table_info = await session.execute(table_info_sql, {"collection_name": collection_name})
-                record_count = await session.execute(count_sql)
+                    table_info = await session.execute(table_info_sql, {"collection_name": collection_name})
+                    record_count = await session.execute(count_sql)
 
-                table_data = table_info.fetchone()
-                if not table_data:
-                    return None
-                
-                return {
-                    "table_info": {
-                        "schemaname": table_data[0],
-                        "tablename": table_data[1],
-                        "tableowner": table_data[2],
-                        "tablespace": table_data[3],
-                        "hasindexes": table_data[4],
-                    },
-                    "record_count": record_count.scalar_one(),
-                }
+                    table_data = table_info.fetchone()
+                    if not table_data:
+                        return None
+                    
+                    return {
+                        "table_info": {
+                            "schemaname": table_data[0],
+                            "tablename": table_data[1],
+                            "tableowner": table_data[2],
+                            "tablespace": table_data[3],
+                            "hasindexes": table_data[4],
+                        },
+                        "record_count": record_count.scalar_one(),
+                    }
+            return None
 
     async def delete_collection(self, collection_name: str):
         async with self.db_client() as session:
@@ -203,7 +206,7 @@ class PGVectorProvider(VectorDBInterface):
 
         async with self.db_client() as session:
             async with session.begin():
-                search_sql = sql_text(f"""SELECT text as text, 1- (vector <=> :vector) as score
+                search_sql = sql_text(f"""SELECT *, 1- (vector <=> :vector) as score
                                       FROM {collection_name}
                                       ORDER BY score DESC
                                       LIMIT {limit}""")
@@ -215,7 +218,9 @@ class PGVectorProvider(VectorDBInterface):
                 return [
                     RetrievedDocument(
                         text=record.text,
-                        score=record.score
+                        score=record.score,
+                        chunk_id=record.chunk_id,
+                        metadata=record.metadata if record.metadata else None,
                     )
                     for record in records
                 ]

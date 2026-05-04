@@ -49,6 +49,14 @@ class Settings(BaseSettings):
     CELERY_WORKER_CONCURRENCY: int = 2
     CELERY_FLOWER_PASSWORD: str = None
 
+    QUERY_ADAPTER_MODE_LITERAL: List[str] = None
+    QUERY_ADAPTER_MODE: str
+    RERANKER_MODE_LITERAL: List[str] = None
+    RERANKER_MODE: str
+    RERANKER_MODEL: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    RETRIEVAL_CANDIDATES_N: int = 20
+    CONTEXT_TOP_K: int = 5
+
     model_config = SettingsConfigDict(
         env_file="../docker/env/.env.app",
         env_file_encoding="utf-8",
