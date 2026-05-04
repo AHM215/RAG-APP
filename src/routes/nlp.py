@@ -5,11 +5,13 @@ from models.ProjectModel import ProjectModel
 from models.ChunkModel import ChunkModel
 from controllers import NLPController
 from models import ResponseSignal
+from helpers import get_settings
 from tqdm.auto import tqdm
 
 import logging
 
 logger = logging.getLogger('uvicorn.error')
+settings = get_settings()
 
 nlp_router = APIRouter(
     prefix="/api/v1/nlp",
@@ -44,6 +46,7 @@ async def index_project(request: Request, project_id: int, push_request: PushReq
         generation_client=request.app.generation_client,
         embedding_client=request.app.embedding_client,
         template_parser=request.app.template_parser,
+        cross_encoder=request.app.cross_encoder
     )
 
     has_records = True
@@ -116,6 +119,7 @@ async def get_project_index_info(request: Request, project_id: int):
         generation_client=request.app.generation_client,
         embedding_client=request.app.embedding_client,
         template_parser=request.app.template_parser,
+        cross_encoder=request.app.cross_encoder
     )
 
     collection_info = await nlp_controller.get_vector_db_collection_info(project=project)
@@ -143,10 +147,17 @@ async def search_index(request: Request, project_id: int, search_request: Search
         generation_client=request.app.generation_client,
         embedding_client=request.app.embedding_client,
         template_parser=request.app.template_parser,
+        cross_encoder=request.app.cross_encoder
     )
 
     results = await nlp_controller.search_vector_db_collection(
-        project=project, text=search_request.text, limit=search_request.limit
+        project=project, 
+        text=search_request.text, 
+        limit=search_request.limit,
+        candidates_n=settings.RETRIEVAL_CANDIDATES_N,
+        top_k=settings.CONTEXT_TOP_K,
+        rerank=settings.RERANKER_MODE,
+        query_adapter=settings.QUERY_ADAPTER_MODE
     )
 
     if not results:
@@ -180,6 +191,7 @@ async def answer_rag(request: Request, project_id: int, search_request: SearchRe
         generation_client=request.app.generation_client,
         embedding_client=request.app.embedding_client,
         template_parser=request.app.template_parser,
+        cross_encoder=request.app.cross_encoder
     )
 
     answer, full_prompt, chat_history = await nlp_controller.answer_rag_question(
