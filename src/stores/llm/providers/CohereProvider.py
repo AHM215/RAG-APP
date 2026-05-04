@@ -52,14 +52,14 @@ class CoHereProvider(LLMInterface):
         max_output_tokens = max_output_tokens if max_output_tokens else self.default_generation_max_output_tokens
         temperature = temperature if temperature else self.default_generation_temperature
 
-        response = await asyncio.to_thread(self.client.chat(
-            model = self.generation_model_id,
-            chat_history = chat_history,
-            message = self.process_text(prompt),
-            temperature = temperature,
-            max_tokens = max_output_tokens
-        )
-)
+        response = await asyncio.to_thread(
+                                            self.client.chat,
+                                            model=self.generation_model_id,
+                                            chat_history=chat_history,
+                                            message=self.process_text(prompt),
+                                            temperature=temperature,
+                                            max_tokens=max_output_tokens
+                                        )
         if not response or not response.text:
             self.logger.error("Error while generating text with CoHere")
             return None

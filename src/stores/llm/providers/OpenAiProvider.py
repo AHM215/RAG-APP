@@ -61,12 +61,13 @@ class OpenAIProvider(LLMInterface):
             self.construct_prompt(prompt=prompt, role=OpenAIEnums.USER.value)
         )
 
-        response = await asyncio.to_thread(self.client.chat.completions.create(
-            model = self.generation_model_id,
-            messages = chat_history,
-            max_tokens = max_output_tokens,
-            temperature = temperature
-        ))
+        response = await asyncio.to_thread(
+                                    self.client.chat.completions.create,  # ← pass the function, not the call
+                                    model=self.generation_model_id,
+                                    messages=chat_history,
+                                    max_tokens=max_output_tokens,
+                                    temperature=temperature
+                                )
 
         if not response or not response.choices or len(response.choices) == 0 or not response.choices[0].message:
             self.logger.error("Error while generating text with OpenAI")
