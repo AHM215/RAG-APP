@@ -19,7 +19,8 @@ pydantic-settings = "^2.2.1"
 aiofiles = "^23.2.1"
 
 # RAG / AI stack
-langchain = "^0.1.20"
+langchain = ">=1.0.2"
+langchain-community = ">=0.4.1"
 sentence-transformers = "^2.7.0"
 
 # Vector DB
@@ -31,6 +32,7 @@ asyncpg = "^0.30.0"
 alembic = "^1.14.0"
 psycopg2-binary = "^2.9.10"
 pgvector = "^0.4.0"
+pydantic-mongo = "^2.3.0"
 
 # Storage / async
 motor = "^3.4.0"
