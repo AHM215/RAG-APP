@@ -93,6 +93,7 @@ async def process_endpoint(request: Request, project_id: int, process_request: P
         generation_client=request.app.generation_client,
         embedding_client=request.app.embedding_client,
         template_parser=request.app.template_parser,
+        cross_encoder=request.app.cross_encoder
     )
     if process_request.do_reset == 1:
         # delete associated vectors collection
