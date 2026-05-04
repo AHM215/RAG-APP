@@ -143,7 +143,6 @@ docs
 
 # RabbitMQ
 mnesia/
-rabbitmq/
 rabbitmq-data/
 
 # ActiveMQ
@@ -152,15 +151,6 @@ activemq-data/
 # SageMath parsed files
 *.sage.py
 
-# Environments
-.env
-.envrc
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
 
 # Spyder project settings
 .spyderproject
