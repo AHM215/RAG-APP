@@ -36,7 +36,7 @@ billiard = "4.2.1"
 vine = "5.1.0"
 flower = "2.0.1"
 greenlet = "*"
-sentence-transformers = ">=2.7.0"
+# sentence-transformers = ">=2.7.0"
 
 
 [tool.poetry.group.test.dependencies]
