@@ -21,7 +21,7 @@ aiofiles = "^23.2.1"
 # RAG / AI stack
 langchain = ">=1.0.2"
 langchain-community = ">=0.4.1"
-sentence-transformers = "^2.7.0"
+sentence-transformers = "^5.4.1"
 
 # Vector DB
 qdrant-client = "^1.15.1"
