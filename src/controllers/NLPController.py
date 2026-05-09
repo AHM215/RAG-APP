@@ -10,6 +10,9 @@ import logging
 settings = get_settings()
 logger = logging.getLogger(__name__)
 
+QUERY_ADAPTER_MODES = {"none", "rewrite", "hyde"}
+RERANKER_MODES = {"none", "cross_encoder", "llm"}
+
 class NLPController(BaseController):
 
     def __init__(self, vectordb_client, generation_client, 
@@ -136,6 +139,10 @@ class NLPController(BaseController):
 
     async def _adapt_query(self, query: str, adapter_mode: str = None) -> Tuple[str, str]:
         mode = adapter_mode or settings.QUERY_ADAPTER_MODE
+        if mode not in QUERY_ADAPTER_MODES:
+            logger.warning(f"Unknown query adapter mode '{mode}', using 'none'")
+            mode = "none"
+
         logger.info(f"Adapting query with mode='{mode}': '{query}'")
         
         if mode == "rewrite":
@@ -192,10 +199,14 @@ class NLPController(BaseController):
 
         logger.info(f"Cross-encoder reranking {len(candidates)} candidates, top_k={top_k}")
         pairs = [(query, doc.text) for doc in candidates]
-        
-        scores: List[float] = await asyncio.to_thread(
-            self.cross_encoder.predict, pairs
-        )
+
+        try:
+            scores: List[float] = await asyncio.to_thread(
+                self.cross_encoder.predict, pairs
+            )
+        except Exception as e:
+            logger.error(f"Cross-encoder rerank failed: {e}", exc_info=True)
+            return candidates[:top_k]
         
         for doc, score in zip(candidates, scores):
             doc.rerank_score = float(score)
@@ -229,19 +240,29 @@ class NLPController(BaseController):
                 max_output_tokens=256
             )
 
-            order: List[int] = json.loads(raw)
+            raw = raw.strip()
+            start = raw.find("[")
+            end = raw.rfind("]")
+            if start == -1 or end == -1 or end < start:
+                raise ValueError("LLM response does not contain a JSON array")
+
+            order: List[int] = json.loads(raw[start:end + 1])
             logger.info(
                 "LLM rerank mapping: " +
                 " | ".join([f"{rank}:{idx}" for rank, idx in enumerate(order)])
             )
-            # 🧠 Convert ranking → scoring (like cross-encoder)
             score_map = {}
-            n = len(order)
+            seen = set()
+            valid_order = []
 
             for rank, idx in enumerate(order):
-                if 0 <= idx < len(candidates):
-                    # higher rank → higher score
-                    score_map[idx] = (n - rank) / n
+                if isinstance(idx, int) and 0 <= idx < len(candidates) and idx not in seen:
+                    seen.add(idx)
+                    valid_order.append(idx)
+
+            n = len(valid_order)
+            for rank, idx in enumerate(valid_order):
+                score_map[idx] = (n - rank) / n if n else 0.0
 
             for i, doc in enumerate(candidates):
                 doc.rerank_score = score_map.get(i, 0.0)
@@ -252,7 +273,7 @@ class NLPController(BaseController):
                 reverse=True
             )
 
-        except (json.JSONDecodeError, IndexError, TypeError) as e:
+        except (json.JSONDecodeError, IndexError, TypeError, ValueError) as e:
             logger.error(f"LLM rerank failed: {e}", exc_info=True)
             reranked = candidates
 
@@ -272,6 +293,9 @@ class NLPController(BaseController):
         
         # Step 2: Determine reranker mode
         reranker_mode = settings.RERANKER_MODE
+
+        if isinstance(force_rerank, str):
+            reranker_mode = force_rerank
         
         if force_rerank is False:
             reranker_mode = "none"
@@ -279,6 +303,10 @@ class NLPController(BaseController):
         elif force_rerank is True and reranker_mode == "none":
             reranker_mode = "cross_encoder" if self.cross_encoder else "llm"
             logger.debug(f"Reranking forced, selected mode: '{reranker_mode}'")
+
+        if reranker_mode not in RERANKER_MODES:
+            logger.warning(f"Unknown reranker mode '{reranker_mode}', using 'none'")
+            reranker_mode = "none"
 
         final_top_k = top_k or settings.CONTEXT_TOP_K
         fetch_n = (candidates_n or settings.RETRIEVAL_CANDIDATES_N) if reranker_mode != "none" else final_top_k
@@ -364,6 +392,7 @@ class NLPController(BaseController):
                                    limit: int = 10,
                                    candidates_n: int = None,
                                    top_k: int = None,
+                                   rerank: str = None,
                                    query_adapter: str = None):
 
         logger.info(f"RAG answer start | project={project.project_id} | query='{query[:80]}'")
@@ -374,6 +403,7 @@ class NLPController(BaseController):
             query=query,
             candidates_n=candidates_n,
             top_k=top_k or limit,
+            force_rerank=rerank,
             query_adapter=query_adapter
         )
 
