@@ -7,3 +7,7 @@ class PushRequest(BaseModel):
 class SearchRequest(BaseModel):
     text: str
     limit: Optional[int] = 10
+    candidates_n: Optional[int] = None
+    top_k: Optional[int] = None
+    rerank: Optional[Literal["none", "cross_encoder", "llm"]] = None
+    query_adapter: Optional[Literal["none", "rewrite", "hyde"]] = None
