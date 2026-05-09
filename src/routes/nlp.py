@@ -154,10 +154,10 @@ async def search_index(request: Request, project_id: int, search_request: Search
         project=project, 
         text=search_request.text, 
         limit=search_request.limit,
-        candidates_n=settings.RETRIEVAL_CANDIDATES_N,
-        top_k=settings.CONTEXT_TOP_K,
-        rerank=settings.RERANKER_MODE,
-        query_adapter=settings.QUERY_ADAPTER_MODE
+        candidates_n=search_request.candidates_n or settings.RETRIEVAL_CANDIDATES_N,
+        top_k=search_request.top_k or settings.CONTEXT_TOP_K,
+        rerank=search_request.rerank or settings.RERANKER_MODE,
+        query_adapter=search_request.query_adapter or settings.QUERY_ADAPTER_MODE
     )
 
     if not results:
@@ -198,6 +198,10 @@ async def answer_rag(request: Request, project_id: int, search_request: SearchRe
         project=project,
         query=search_request.text,
         limit=search_request.limit,
+        candidates_n=search_request.candidates_n,
+        top_k=search_request.top_k,
+        rerank=search_request.rerank,
+        query_adapter=search_request.query_adapter,
     )
 
     if not answer:
