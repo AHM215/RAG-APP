@@ -95,7 +95,15 @@ async def process_endpoint(request: Request, project_id: int, process_request: P
         template_parser=request.app.template_parser,
         cross_encoder=request.app.cross_encoder
     )
-    if process_request.do_reset == 1:
+    if process_request.do_reset and process_request.file_id:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={
+                "signal": "DO_RESET_REQUIRES_FULL_PROJECT_PROCESSING"
+            }
+        )
+
+    if process_request.do_reset:
         # delete associated vectors collection
         collection_name = nlp_controller.create_collection_name(project_id=project.project_id)
         _ = await request.app.vectordb_client.delete_collection(collection_name=collection_name)
@@ -172,4 +180,3 @@ async def process_endpoint(request: Request, project_id: int, process_request: P
             "processed_files": no_files
         }
     )
-
