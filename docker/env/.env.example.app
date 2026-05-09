@@ -48,11 +48,11 @@ CELERY_TASK_ACKS_LATE=false
 CELERY_WORKER_CONCURRENCY=2
 CELERY_FLOWER_PASSWORD="minirag_flower_2222"
 
-# ========================= Query Adaptaion & Reranker =========================
-VECTOR_DB_BACKEND_LITERAL = ["none", "rewrite", "hyde"]
+# ========================= Query Adaptation & Reranker =========================
+QUERY_ADAPTER_MODE_LITERAL = ["none", "rewrite", "hyde"]
 QUERY_ADAPTER_MODE="none"
-VECTOR_DB_BACKEND_LITERAL = ["none", "cross_encoder", "llm"]
+RERANKER_MODE_LITERAL = ["none", "cross_encoder", "llm"]
 RERANKER_MODE="none"
 RERANKER_MODEL = "cross-encoder/ms-marco-MiniLM-L-6-v2"
 RETRIEVAL_CANDIDATES_N = 20
-CONTEXT_TOP_K: int = 5
+CONTEXT_TOP_K = 5
