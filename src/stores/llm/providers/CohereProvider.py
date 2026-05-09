@@ -3,6 +3,7 @@ from ..enums import CoHereEnums, DocumentTypeEnum
 import cohere
 import logging
 from typing import List, Union
+import asyncio
 
 
 class CoHereProvider(LLMInterface):
@@ -52,11 +53,16 @@ class CoHereProvider(LLMInterface):
         max_output_tokens = max_output_tokens if max_output_tokens else self.default_generation_max_output_tokens
         temperature = temperature if temperature else self.default_generation_temperature
 
+        messages = list(chat_history or [])
+        message = self.process_text(prompt) if prompt else ""
+        if not message and messages and messages[-1].get("role") == CoHereEnums.USER.value:
+            message = self.process_text(messages.pop().get("text", ""))
+
         response = await asyncio.to_thread(
                                             self.client.chat,
                                             model=self.generation_model_id,
-                                            chat_history=chat_history,
-                                            message=self.process_text(prompt),
+                                            chat_history=messages,
+                                            message=message,
                                             temperature=temperature,
                                             max_tokens=max_output_tokens
                                         )
