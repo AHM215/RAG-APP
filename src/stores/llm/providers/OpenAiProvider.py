@@ -57,14 +57,16 @@ class OpenAIProvider(LLMInterface):
         max_output_tokens = max_output_tokens if max_output_tokens else self.default_generation_max_output_tokens
         temperature = temperature if temperature else self.default_generation_temperature
 
-        chat_history.append(
-            self.construct_prompt(prompt=prompt, role=OpenAIEnums.USER.value)
-        )
+        messages = list(chat_history or [])
+        if prompt:
+            messages.append(
+                self.construct_prompt(prompt=prompt, role=OpenAIEnums.USER.value)
+            )
 
         response = await asyncio.to_thread(
                                     self.client.chat.completions.create,  # ← pass the function, not the call
                                     model=self.generation_model_id,
-                                    messages=chat_history,
+                                    messages=messages,
                                     max_tokens=max_output_tokens,
                                     temperature=temperature
                                 )
