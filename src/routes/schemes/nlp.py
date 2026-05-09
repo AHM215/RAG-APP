@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from typing import List, Optional, Literal
 
 class PushRequest(BaseModel):
-    do_reset: Optional[int] = 0
+    do_reset: bool = False
 
 class SearchRequest(BaseModel):
     text: str
