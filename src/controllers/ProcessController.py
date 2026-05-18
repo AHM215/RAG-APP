@@ -4,7 +4,7 @@ from models.enums.ResponseEnums import ResponseSignal
 from .BaseController import BaseController
 from .ProjectController import ProjectController
 from langchain_community.document_loaders import TextLoader, PyMuPDFLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from models import ProcessingEnum
 import os
 
