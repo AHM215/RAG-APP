@@ -6,27 +6,34 @@ This folder contains offline evaluation helpers and local gold datasets for mini
 
 Use `generate_gold.py` to sample indexed chunks from PostgreSQL/PGVector or Qdrant and ask an LLM to draft grounded question/answer pairs.
 
+The script uses the project's `LLMProviderFactory` and `get_settings()`, so it reads `GENERATION_BACKEND`, `GENERATION_MODEL_ID`, `OPENAI_API_KEY`, `OPENAI_API_URL`, and `COHERE_API_KEY` directly from `docker/env/.env.app`.
+
 ```bash
+cd src
 python eval/generate_gold.py \
   --project-id 1 \
   --source postgres \
   --chunks 30 \
   --questions-per-chunk 1 \
-  --provider openai \
   --output eval/gold/project_1.candidates.jsonl
 ```
 
-The script reads database settings from `docker/env/.env.app` by default. You can also pass a DSN directly:
+You can also pass a database DSN directly:
 
 ```bash
+cd src
 python eval/generate_gold.py \
   --project-id 1 \
-  --database-url postgresql://user:password@localhost:5432/minirag
+  --source postgres \
+  --database-url postgresql://user:password@localhost:5432/minirag \
+  --chunks 30 \
+  --output eval/gold/project_1.candidates.jsonl
 ```
 
 To sample from Qdrant instead, use `--source qdrant`. The script reads `VECTOR_DB_PATH` and `EMBEDDING_MODEL_SIZE` from `docker/env/.env.app` by default and builds the mini-RAG collection name as `collection_<embedding_size>_<project_id>`.
 
 ```bash
+cd src
 python eval/generate_gold.py \
   --project-id 1 \
   --source qdrant \
@@ -39,19 +46,11 @@ python eval/generate_gold.py \
 If your collection name is different, pass it directly:
 
 ```bash
+cd src
 python eval/generate_gold.py \
   --project-id 1 \
   --source qdrant \
   --qdrant-collection collection_1024_1
-```
-
-OpenAI generation requires `OPENAI_API_KEY`. Cohere generation is also supported:
-
-```bash
-python eval/generate_gold.py \
-  --project-id 1 \
-  --provider cohere \
-  --model command-a-03-2025
 ```
 
 ## Review Before Use

@@ -216,7 +216,7 @@ __marimo__/
 FEATURE_ROADMAP.md
 
 # Evaluation datasets and reports
-eval/gold/*.jsonl
-!eval/gold/*.jsonl.example
-eval/reports/*
-!eval/reports/.gitkeep
+src/eval/gold/*.jsonl
+!src/eval/gold/*.jsonl.example
+src/eval/reports/*
+!src/eval/reports/.gitkeep
