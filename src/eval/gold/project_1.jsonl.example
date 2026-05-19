@@ -1,0 +1,2 @@
+{"id":"q001","project_id":1,"query":"What is the refund policy for digital products?","reference_answer":"Digital products are non-refundable after download.","relevant_chunk_ids":[12],"metadata":{"locale":"en","difficulty":"easy","source":"manual"}}
+{"id":"q002","project_id":1,"query":"What are the main requirements for using the service?","reference_answer":"Users must meet the documented requirements before using the service.","relevant_chunk_ids":[45],"metadata":{"locale":"en","difficulty":"medium","source":"manual"}}

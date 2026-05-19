@@ -211,5 +211,12 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+.opencode/
 
 FEATURE_ROADMAP.md
+
+# Evaluation datasets and reports
+src/eval/gold/*.jsonl
+!src/eval/gold/*.jsonl.example
+src/eval/reports/*
+!src/eval/reports/.gitkeep
