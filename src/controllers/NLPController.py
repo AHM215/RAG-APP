@@ -327,6 +327,51 @@ class NLPController(BaseController):
         logger.info(f"Retrieval pipeline complete | returned {len(results)} documents")
         return results
 
+    async def batch_search(self, project: Project, queries: List[str],
+                           limit: int = 10,
+                           candidates_n: int = None,
+                           top_k: int = None,
+                           rerank: str = None,
+                           query_adapter: str = None):
+
+        logger.info(f"batch_search | project={project.project_id} | queries={len(queries)} | limit={limit} | rerank={rerank} | adapter={query_adapter}")
+
+        adapted_queries = []
+        for q in queries:
+            adapted, _ = await self._adapt_query(q, query_adapter)
+            adapted_queries.append(adapted)
+
+        collection_name = self.create_collection_name(project_id=project.project_id)
+        logger.info(f"Batch embedding {len(adapted_queries)} queries in '{collection_name}'")
+
+        vectors = self.embedding_client.embed_text(
+            text=adapted_queries,
+            document_type=DocumentTypeEnum.QUERY.value
+        )
+
+        if not vectors or len(vectors) == 0:
+            logger.warning("Batch embedding returned empty")
+            return [{"query": q, "results": []} for q in queries]
+
+        all_results = []
+        for query, adapted, vec in zip(queries, adapted_queries, vectors):
+            if not vec:
+                logger.warning(f"Null vector for query: '{query[:80]}'")
+                all_results.append({"query": query, "results": []})
+                continue
+
+            docs = await self.vectordb_client.search_by_vector(
+                collection_name=collection_name,
+                vector=vec,
+                limit=limit
+            )
+            docs = docs if docs else []
+            logger.debug(f"Batch search for '{query[:50]}...' -> {len(docs)} results")
+            all_results.append({"query": query, "results": [d.dict() for d in docs]})
+
+        logger.info(f"Batch search complete | {len(all_results)} queries processed")
+        return all_results
+
     async def search_vector_db_collection(self, project: Project, text: str, 
                                           limit: int = 10,
                                           candidates_n: int = None,

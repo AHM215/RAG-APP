@@ -1,6 +1,6 @@
 from fastapi import FastAPI, APIRouter, status, Request
 from fastapi.responses import JSONResponse
-from routes.schemes import PushRequest, SearchRequest
+from routes.schemes import PushRequest, SearchRequest, BatchSearchRequest
 from models.ProjectModel import ProjectModel
 from models.ChunkModel import ChunkModel
 from controllers import NLPController
@@ -172,6 +172,42 @@ async def search_index(request: Request, project_id: int, search_request: Search
         content={
             "signal": ResponseSignal.VECTORDB_SEARCH_SUCCESS.value,
             "results": [ result.dict()  for result in results ]
+        }
+    )
+
+@nlp_router.post("/index/batch-search/{project_id}")
+async def batch_search_index(request: Request, project_id: int, batch_request: BatchSearchRequest):
+
+    project_model = await ProjectModel.create_instance(
+        db_client=request.app.db_client
+    )
+
+    project = await project_model.get_project_or_create_one(
+        project_id=project_id
+    )
+
+    nlp_controller = NLPController(
+        vectordb_client=request.app.vectordb_client,
+        generation_client=request.app.generation_client,
+        embedding_client=request.app.embedding_client,
+        template_parser=request.app.template_parser,
+        cross_encoder=request.app.cross_encoder
+    )
+
+    results = await nlp_controller.batch_search(
+        project=project,
+        queries=batch_request.queries,
+        limit=batch_request.limit,
+        candidates_n=batch_request.candidates_n or settings.RETRIEVAL_CANDIDATES_N,
+        top_k=batch_request.top_k or settings.CONTEXT_TOP_K,
+        rerank=batch_request.rerank or settings.RERANKER_MODE,
+        query_adapter=batch_request.query_adapter or settings.QUERY_ADAPTER_MODE
+    )
+
+    return JSONResponse(
+        content={
+            "signal": ResponseSignal.VECTORDB_SEARCH_SUCCESS.value,
+            "results": results
         }
     )
 
