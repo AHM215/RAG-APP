@@ -2,81 +2,117 @@
 
 This folder contains offline evaluation helpers and local gold datasets for mini-RAG.
 
+## Install Dependencies
+
+```bash
+cd src
+poetry install --with eval
+```
+
 ## Generate Candidate Gold Rows
 
 Use `generate_gold.py` to sample indexed chunks from PostgreSQL/PGVector or Qdrant and ask an LLM to draft grounded question/answer pairs.
 
-The script uses the project's `LLMProviderFactory` and `get_settings()`, so it reads `GENERATION_BACKEND`, `GENERATION_MODEL_ID`, `OPENAI_API_KEY`, `OPENAI_API_URL`, and `COHERE_API_KEY` directly from `docker/env/.env.app`.
-
 ```bash
 cd src
-python eval/generate_gold.py \
+poetry run python eval/generate_gold.py \
   --project-id 1 \
-  --source postgres \
+  --locale en \
   --chunks 30 \
-  --questions-per-chunk 1 \
-  --output eval/gold/project_1.candidates.jsonl
+  --output eval/gold/project_1_en.candidates.jsonl
 ```
 
-You can also pass a database DSN directly:
+Or use the convenience script:
+
+```bash
+./run_generate_gold.sh 1 en 30
+```
+
+## Run Evaluation
+
+Make sure mini-RAG is running first (`http://localhost:8000`).
 
 ```bash
 cd src
-python eval/generate_gold.py \
-  --project-id 1 \
-  --source postgres \
-  --database-url postgresql://user:password@localhost:5432/minirag \
-  --chunks 30 \
-  --output eval/gold/project_1.candidates.jsonl
+poetry run python eval/run_eval.py \
+  --gold eval/gold/project_1.jsonl \
+  --base-url http://localhost:8000 \
+  --metrics faithfulness answer_relevancy context_precision \
+  --query-adapter none \
+  --rerank none \
+  --top-k 5 \
+  --output eval/reports/baseline.json
 ```
 
-To sample from Qdrant instead, use `--source qdrant`. The script reads `VECTOR_DB_PATH` and `EMBEDDING_MODEL_SIZE` from `docker/env/.env.app` by default and builds the mini-RAG collection name as `collection_<embedding_size>_<project_id>`.
+Or use the convenience script:
+
+```bash
+# Baseline: no adapter, no reranker
+./run_eval.sh eval/gold/project_1.jsonl http://localhost:8000 "faithfulness answer_relevancy" none none 5
+
+# With cross-encoder reranker
+./run_eval.sh eval/gold/project_1.jsonl http://localhost:8000 "faithfulness answer_relevancy context_precision" none cross_encoder 5
+
+# With query rewrite
+./run_eval.sh eval/gold/project_1.jsonl http://localhost:8000 "faithfulness answer_relevancy context_precision" rewrite none 5
+```
+
+## Compare Reports
 
 ```bash
 cd src
-python eval/generate_gold.py \
-  --project-id 1 \
-  --source qdrant \
-  --qdrant-url http://localhost:6333 \
-  --embedding-size 1024 \
-  --chunks 30 \
-  --output eval/gold/project_1.candidates.jsonl
+poetry run python eval/compare_runs.py \
+  eval/reports/eval_none_none_20250101_120000.json \
+  eval/reports/eval_none_cross_encoder_20250101_120500.json
 ```
 
-If your collection name is different, pass it directly:
+## Suggested Baselines
 
-```bash
-cd src
-python eval/generate_gold.py \
-  --project-id 1 \
-  --source qdrant \
-  --qdrant-collection collection_1024_1
-```
+Run eval with each pipeline config and compare:
 
-## Review Before Use
+| Config | Command |
+|--------|---------|
+| `adapter=none`, `rerank=none` | `./run_eval.sh ... none none 5` |
+| `adapter=rewrite`, `rerank=none` | `./run_eval.sh ... rewrite none 5` |
+| `adapter=hyde`, `rerank=none` | `./run_eval.sh ... hyde none 5` |
+| `adapter=none`, `rerank=cross_encoder` | `./run_eval.sh ... none cross_encoder 5` |
+| `adapter=rewrite`, `rerank=cross_encoder` | `./run_eval.sh ... rewrite cross_encoder 5` |
+| `adapter=none`, `rerank=llm` | `./run_eval.sh ... none llm 5` |
 
-Generated rows are candidates, not trusted gold data. Review every row before copying accepted examples into `eval/gold/project_1.jsonl`.
+## Report Output Shape
 
-Check that each row:
-
-- Is answerable from the listed `relevant_chunk_ids`.
-- Has a concise `reference_answer` supported by the chunk.
-- Does not contain invented facts.
-- Is not too generic, such as `What is this document about?`.
-- Matches the intended `locale` and `difficulty`.
-
-After review, set metadata to reflect that status, for example:
+Each run produces a JSON report with:
 
 ```json
-{"source":"synthetic_reviewed","reviewed":true}
+{
+  "run_at": "2025-01-01T12:00:00+00:00",
+  "gold_file": "eval/gold/project_1.jsonl",
+  "base_url": "http://localhost:8000",
+  "config": {"query_adapter": "none", "rerank": "none", "candidates_n": 20, "top_k": 5},
+  "num_queries": 30,
+  "num_failed": 0,
+  "error_rate": 0.0,
+  "scores": {
+    "ragas": {"faithfulness": 0.85, "answer_relevancy": 0.90},
+    "deterministic": {"recall_at_k": 0.80, "mrr_at_k": 0.75},
+    "latency": {"search_latency_p50_ms": 120.5, "answer_latency_p50_ms": 2500.0},
+    "locale": {"faithfulness_by_locale": {"en": 0.85, "ar": 0.78}},
+    "difficulty": {"faithfulness_by_difficulty": {"easy": 0.92, "medium": 0.80}},
+    "answer_success_rate": 0.83
+  },
+  "per_query": [...]
+}
 ```
 
-## Gold JSONL Shape
+## Metric Targets
 
-Each accepted line should look like this:
-
-```json
-{"id":"q001","project_id":1,"query":"What is the refund policy?","reference_answer":"Digital products are non-refundable after download.","relevant_chunk_ids":[12],"metadata":{"locale":"en","difficulty":"easy","source":"manual"}}
-```
-
-Real `eval/gold/*.jsonl` files are gitignored because they may contain private project content. Commit only `*.jsonl.example` templates.
+| Metric | Minimum | Good |
+|--------|---------|------|
+| `faithfulness` | > 0.75 | > 0.90 |
+| `answer_relevancy` | > 0.75 | > 0.90 |
+| `context_precision` | > 0.60 | > 0.80 |
+| `context_recall` | > 0.65 | > 0.85 |
+| `recall_at_k` | > 0.70 | > 0.90 |
+| `mrr_at_k` | > 0.60 | > 0.85 |
+| `duplicate_context_rate` | < 0.20 | < 0.10 |
+| `empty_retrieval_rate` | 0.00 | 0.00 |
