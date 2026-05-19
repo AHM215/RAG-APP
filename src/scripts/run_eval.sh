@@ -21,7 +21,7 @@ if [ -f "${ENV_FILE}" ]; then
 fi
 
 # === Edit these to change models/providers ===
-JUDGE_MODEL="${JUDGE_MODEL:-openai/gpt-5.4-mini-2026-03-17}"
+JUDGE_MODEL="${JUDGE_MODEL:-openai/gpt-3.5-turbo}"
 OPENAI_BASE_URL="${OPENAI_BASE_URL:-https://lightning.ai/api/v1/}"
 JUDGE_EMBEDDING_MODEL="${JUDGE_EMBEDDING_MODEL:-embed-multilingual-light-v3.0}"
 # ============================================
