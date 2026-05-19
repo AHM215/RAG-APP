@@ -67,7 +67,7 @@ fi
 
 BASE_URL="${2:-http://localhost:8000}"
 METRICS="${3:-faithfulness answer_relevancy}"
-QUERY_ADAPTER="${4:-rewrite}"
+QUERY_ADAPTER="${4:-none}"
 RERANK="${5:-cross_encoder}"
 TOP_K="${6:-5}"
 MAX_RETRIES="${MAX_RETRIES:-5}"
