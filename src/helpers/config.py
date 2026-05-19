@@ -54,7 +54,7 @@ class Settings(BaseSettings):
     RERANKER_MODE_LITERAL: List[str] = None
     RERANKER_MODE: str
     RERANKER_MODEL: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
-    RETRIEVAL_CANDIDATES_N: int = 20
+    RETRIEVAL_CANDIDATES_N: int = 10
     CONTEXT_TOP_K: int = 5
 
     model_config = SettingsConfigDict(

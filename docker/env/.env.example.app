@@ -54,5 +54,5 @@ QUERY_ADAPTER_MODE="none"
 RERANKER_MODE_LITERAL = ["none", "cross_encoder", "llm"]
 RERANKER_MODE="none"
 RERANKER_MODEL = "cross-encoder/ms-marco-MiniLM-L-6-v2"
-RETRIEVAL_CANDIDATES_N = 20
+RETRIEVAL_CANDIDATES_N = 10
 CONTEXT_TOP_K = 5

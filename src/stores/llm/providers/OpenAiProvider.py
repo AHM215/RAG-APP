@@ -1,9 +1,26 @@
 from ..LLMInterface import LLMInterface
 from ..enums import OpenAIEnums
 from openai import OpenAI
+import httpx
 import logging
+import time
 from typing import List, Union
 import asyncio
+
+
+class _RateLimitTransport(httpx.HTTPTransport):
+    def __init__(self, delay_s: float = 1.5, **kwargs):
+        super().__init__(**kwargs)
+        self._delay_s = float(delay_s)
+        self._last = 0.0
+
+    def handle_request(self, request: httpx.Request) -> httpx.Response:
+        now = time.monotonic()
+        elapsed = now - self._last
+        if elapsed < self._delay_s:
+            time.sleep(self._delay_s - elapsed)
+        self._last = time.monotonic()
+        return super().handle_request(request)
 
 
 class OpenAIProvider(LLMInterface):
@@ -25,9 +42,12 @@ class OpenAIProvider(LLMInterface):
         self.embedding_model_id = None
         self.embedding_size = None
 
+        transport = _RateLimitTransport(delay_s=1.5)
+        http_client = httpx.Client(transport=transport)
         self.client = OpenAI(
             api_key = self.api_key,
-            base_url = self.api_url if self.api_url and len(self.api_url) else None
+            base_url = self.api_url if self.api_url and len(self.api_url) else None,
+            http_client = http_client,
         )
 
         self.enums = OpenAIEnums

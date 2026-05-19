@@ -2,9 +2,9 @@
 Compare two eval report JSON files side by side.
 
 Usage:
-  python eval/compare_runs.py \
-    eval/reports/eval_no_reranker.json \
-    eval/reports/eval_cross_encoder.json
+    poetry run python eval/compare_runs.py \
+            eval/reports/eval_no_reranker.json \
+            eval/reports/eval_cross_encoder.json
 """
 
 import json

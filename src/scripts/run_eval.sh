@@ -21,7 +21,7 @@ if [ -f "${ENV_FILE}" ]; then
 fi
 
 # === Edit these to change models/providers ===
-JUDGE_MODEL="${JUDGE_MODEL:-openai/gpt-3.5-turbo}"
+JUDGE_MODEL="${JUDGE_MODEL:-openai/gpt-5.4-mini-2026-03-17}"
 OPENAI_BASE_URL="${OPENAI_BASE_URL:-https://lightning.ai/api/v1/}"
 JUDGE_EMBEDDING_MODEL="${JUDGE_EMBEDDING_MODEL:-embed-multilingual-light-v3.0}"
 # ============================================
@@ -67,8 +67,8 @@ fi
 
 BASE_URL="${2:-http://localhost:8000}"
 METRICS="${3:-faithfulness answer_relevancy}"
-QUERY_ADAPTER="${4:-none}"
-RERANK="${5:-none}"
+QUERY_ADAPTER="${4:-rewrite}"
+RERANK="${5:-cross_encoder}"
 TOP_K="${6:-5}"
 MAX_RETRIES="${MAX_RETRIES:-5}"
 DELAY_BETWEEN="${DELAY_BETWEEN:-2}"
