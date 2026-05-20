@@ -186,6 +186,39 @@ CONTEXT_TOP_K=5
 
 When reranking is enabled, the API retrieves `RETRIEVAL_CANDIDATES_N` vector candidates, reranks them, and returns the final `CONTEXT_TOP_K` documents.
 
+## Offline Evaluation
+
+Offline evaluation lives in `src/eval/` and produces JSON reports under `src/eval/reports/`.
+
+Requirements:
+
+1. mini-RAG must be running (default: `http://localhost:8000`).
+1. Install eval deps from `src/`: `poetry install --with eval`
+
+Generate candidate gold rows (LLM-drafted Q/A grounded in sampled chunks):
+
+```bash
+cd src
+poetry run python eval/generate_gold.py --project-id 1 --locale ar --chunks 30 \
+  --output eval/gold/project_1_ar.candidates.jsonl
+```
+
+Run evaluation (RAGAS + deterministic retrieval metrics):
+
+```bash
+cd src
+./scripts/run_eval.sh eval/gold/project_1_ar.candidates.jsonl http://localhost:8000 \
+  "faithfulness answer_relevancy" none cross_encoder 5
+```
+
+What you get:
+
+1. `scores.ragas`: judge metrics like `faithfulness`, `answer_relevancy`
+1. `scores.deterministic`: retrieval metrics like `recall_at_k`, `mrr_at_k`, `duplicate_context_rate`
+1. `per_query`: per-question breakdown (useful for debugging regressions)
+
+More details and additional commands are documented in `src/eval/README.md`.
+
 ## API Workflow
 
 Use one `project_id` to group uploaded files, chunks, vectors, searches, and answers.

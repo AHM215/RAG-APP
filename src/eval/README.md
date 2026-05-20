@@ -25,7 +25,7 @@ poetry run python eval/generate_gold.py \
 Or use the convenience script:
 
 ```bash
-./run_generate_gold.sh 1 en 30
+./scripts/run_generate_gold.sh 1 en 30
 ```
 
 ## Run Evaluation
@@ -48,14 +48,19 @@ Or use the convenience script:
 
 ```bash
 # Baseline: no adapter, no reranker
-./run_eval.sh eval/gold/project_1.jsonl http://localhost:8000 "faithfulness answer_relevancy" none none 5
+./scripts/run_eval.sh eval/gold/project_1.jsonl http://localhost:8000 "faithfulness answer_relevancy" none none 5
 
 # With cross-encoder reranker
-./run_eval.sh eval/gold/project_1.jsonl http://localhost:8000 "faithfulness answer_relevancy context_precision" none cross_encoder 5
+./scripts/run_eval.sh eval/gold/project_1.jsonl http://localhost:8000 "faithfulness answer_relevancy context_precision" none cross_encoder 5
 
 # With query rewrite
-./run_eval.sh eval/gold/project_1.jsonl http://localhost:8000 "faithfulness answer_relevancy context_precision" rewrite none 5
+./scripts/run_eval.sh eval/gold/project_1.jsonl http://localhost:8000 "faithfulness answer_relevancy context_precision" rewrite none 5
 ```
+
+Notes:
+
+1. `run_eval.py` uses the API for search + answer generation, so the server must be running.
+1. The API also exposes `POST /api/v1/nlp/index/batch-search/{project_id}` to embed all eval queries in one call (helps avoid Cohere 429s).
 
 ## Compare Reports
 
@@ -72,12 +77,12 @@ Run eval with each pipeline config and compare:
 
 | Config | Command |
 |--------|---------|
-| `adapter=none`, `rerank=none` | `./run_eval.sh ... none none 5` |
-| `adapter=rewrite`, `rerank=none` | `./run_eval.sh ... rewrite none 5` |
-| `adapter=hyde`, `rerank=none` | `./run_eval.sh ... hyde none 5` |
-| `adapter=none`, `rerank=cross_encoder` | `./run_eval.sh ... none cross_encoder 5` |
-| `adapter=rewrite`, `rerank=cross_encoder` | `./run_eval.sh ... rewrite cross_encoder 5` |
-| `adapter=none`, `rerank=llm` | `./run_eval.sh ... none llm 5` |
+| `adapter=none`, `rerank=none` | `./scripts/run_eval.sh ... none none 5` |
+| `adapter=rewrite`, `rerank=none` | `./scripts/run_eval.sh ... rewrite none 5` |
+| `adapter=hyde`, `rerank=none` | `./scripts/run_eval.sh ... hyde none 5` |
+| `adapter=none`, `rerank=cross_encoder` | `./scripts/run_eval.sh ... none cross_encoder 5` |
+| `adapter=rewrite`, `rerank=cross_encoder` | `./scripts/run_eval.sh ... rewrite cross_encoder 5` |
+| `adapter=none`, `rerank=llm` | `./scripts/run_eval.sh ... none llm 5` |
 
 ## Report Output Shape
 
